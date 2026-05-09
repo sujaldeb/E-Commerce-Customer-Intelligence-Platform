@@ -276,7 +276,7 @@ Six interactive pages:
 
 ```bash
 # 1. Clone the repository
-git clone <your-repository-url>
+git clone <https://github.com/sujaldeb/E-Commerce-Customer-Intelligence-Platform>
 cd "E-Commerce Customer Intelligence Platform"
 
 # 2. Install dependencies into your environment
