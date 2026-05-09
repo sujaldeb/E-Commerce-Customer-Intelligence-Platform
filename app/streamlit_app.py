@@ -2,7 +2,7 @@
 #  Streamlit Dashboard · E-Commerce Customer Intelligence Platform   #
 #  Run with: streamlit run app/streamlit_app.py                      #
 # ------------------------------------------------------------------ #
-
+import os
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -136,20 +136,18 @@ PLOT_LAYOUT = dict(
 MIXED_PALETTE = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1']
 
 # ── Paths ──────────────────────────────────────────────────────────
-BASE = r'E:\Projects\python\E-Commerce Customer Intelligence Platform\data\processed'
 
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'processed')
 # ── Data loading ───────────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    clean    = pd.read_parquet(f'{BASE}\\retail_clean.parquet')
-    rfm      = pd.read_parquet(f'{BASE}\\rfm_segments.parquet')
-    cohort   = pd.read_parquet(f'{BASE}\\cohort_matrix.parquet')
-    forecast = pd.read_parquet(f'{BASE}\\forecast.parquet')
-    rules    = pd.read_parquet(f'{BASE}\\association_rules.parquet')
-    geo      = pd.read_parquet(f'{BASE}\\geo_summary.parquet')
+    clean    = pd.read_parquet(os.path.join(BASE, 'retail_clean.parquet'))
+    rfm      = pd.read_parquet(os.path.join(BASE, 'rfm_segments.parquet'))
+    cohort   = pd.read_parquet(os.path.join(BASE, 'cohort_matrix.parquet'))
+    forecast = pd.read_parquet(os.path.join(BASE, 'forecast.parquet'))
+    rules    = pd.read_parquet(os.path.join(BASE, 'association_rules.parquet'))
+    geo      = pd.read_parquet(os.path.join(BASE, 'geo_summary.parquet'))
     return clean, rfm, cohort, forecast, rules, geo
-
-clean, rfm, cohort, forecast, rules, geo = load_data()
 
 # ── Sidebar ─────────────────────────────────────────────────────────
 with st.sidebar:
