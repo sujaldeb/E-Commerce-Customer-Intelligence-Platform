@@ -2,13 +2,14 @@
 #  Streamlit Dashboard · E-Commerce Customer Intelligence Platform   #
 #  Run with: streamlit run app/streamlit_app.py                      #
 # ------------------------------------------------------------------ #
+
 import os
+import warnings
 import pandas as pd
 import numpy as np
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-import warnings
 
 warnings.filterwarnings('ignore')
 
@@ -20,25 +21,21 @@ st.set_page_config(
     initial_sidebar_state='expanded'
 )
 
-# ── Theme — matches portfolio: dark bg, blue/purple accents ────────
+# ── Theme ───────────────────────────────────────────────────────────
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'DM Sans', sans-serif;
-    }
-    .stApp {
-        background-color: #0a0f1e;
-        color: #e2e8f0;
-    }
+    html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+
+    .stApp { background-color: #0a0f1e; color: #e2e8f0; }
+
     [data-testid="stSidebar"] {
         background-color: #0d1326;
         border-right: 1px solid #1e2d4a;
     }
-    [data-testid="stSidebar"] * {
-        color: #94a3b8 !important;
-    }
+    [data-testid="stSidebar"] * { color: #94a3b8 !important; }
+
     .sidebar-title {
         font-size: 0.75rem;
         font-weight: 600;
@@ -47,10 +44,9 @@ st.markdown("""
         color: #475569 !important;
         margin-bottom: 12px;
     }
-    .main .block-container {
-        padding: 2rem 2.5rem;
-        max-width: 1400px;
-    }
+
+    .main .block-container { padding: 2rem 2.5rem; max-width: 1400px; }
+
     h1 {
         font-size: 2.4rem !important;
         font-weight: 700 !important;
@@ -58,16 +54,16 @@ st.markdown("""
         letter-spacing: -0.02em;
         margin-bottom: 0 !important;
     }
+
     .page-caption {
         font-size: 0.9rem;
         color: #64748b;
         margin-top: 4px;
         margin-bottom: 24px;
     }
-    hr {
-        border-color: #1e2d4a !important;
-        margin: 1.5rem 0 !important;
-    }
+
+    hr { border-color: #1e2d4a !important; margin: 1.5rem 0 !important; }
+
     .kpi-card {
         background: #111827;
         border: 1px solid #1e2d4a;
@@ -75,9 +71,8 @@ st.markdown("""
         padding: 20px 24px;
         transition: border-color 0.2s;
     }
-    .kpi-card:hover {
-        border-color: #3b82f6;
-    }
+    .kpi-card:hover { border-color: #3b82f6; }
+
     .kpi-label {
         font-size: 0.75rem;
         font-weight: 600;
@@ -86,6 +81,7 @@ st.markdown("""
         color: #64748b;
         margin-bottom: 8px;
     }
+
     .kpi-value {
         font-size: 1.9rem;
         font-weight: 700;
@@ -93,16 +89,19 @@ st.markdown("""
         font-family: 'DM Mono', monospace;
         letter-spacing: -0.02em;
     }
+
     h2, h3 {
         color: #f1f5f9 !important;
         font-weight: 600 !important;
         letter-spacing: -0.01em;
     }
+
     [data-testid="stDataFrame"] {
         border: 1px solid #1e2d4a;
         border-radius: 10px;
         overflow: hidden;
     }
+
     .stTextInput input {
         background-color: #111827 !important;
         border: 1px solid #1e2d4a !important;
@@ -114,13 +113,12 @@ st.markdown("""
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 2px rgba(59,130,246,0.15) !important;
     }
-    .stRadio > div {
-        gap: 4px;
-    }
+
+    .stRadio > div { gap: 4px; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Shared Plotly theme ─────────────────────────────────────────────
+# ── Shared Plotly layout ────────────────────────────────────────────
 PLOT_LAYOUT = dict(
     paper_bgcolor='#111827',
     plot_bgcolor='#111827',
@@ -135,10 +133,10 @@ PLOT_LAYOUT = dict(
 
 MIXED_PALETTE = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1']
 
-# ── Paths ──────────────────────────────────────────────────────────
-
+# ── Paths — relative so it works locally and on Streamlit Cloud ─────
 BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'processed')
-# ── Data loading ───────────────────────────────────────────────────
+
+# ── Data loading ────────────────────────────────────────────────────
 @st.cache_data
 def load_data():
     clean    = pd.read_parquet(os.path.join(BASE, 'retail_clean.parquet'))
@@ -147,9 +145,15 @@ def load_data():
     forecast = pd.read_parquet(os.path.join(BASE, 'forecast.parquet'))
     rules    = pd.read_parquet(os.path.join(BASE, 'association_rules.parquet'))
     geo      = pd.read_parquet(os.path.join(BASE, 'geo_summary.parquet'))
+
+    clean['InvoiceDate'] = pd.to_datetime(clean['InvoiceDate'])
+    forecast['Date']     = pd.to_datetime(forecast['Date'])
+
     return clean, rfm, cohort, forecast, rules, geo
 
-# ── Sidebar ─────────────────────────────────────────────────────────
+clean, rfm, cohort, forecast, rules, geo = load_data()
+
+# ── Sidebar ──────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="sidebar-title">Navigation</div>', unsafe_allow_html=True)
     page = st.radio(
@@ -168,13 +172,12 @@ if page == 'Overview':
     st.title('Customer Intelligence Platform')
     st.markdown('<p class="page-caption">UCI Online Retail II &nbsp;·&nbsp; 776K transactions &nbsp;·&nbsp; Dec 2009 – Dec 2011</p>', unsafe_allow_html=True)
 
-    clean['InvoiceDate'] = pd.to_datetime(clean['InvoiceDate'])
     order_totals = clean.groupby('Invoice')['Revenue'].sum()
 
     # KPI row
     c1, c2, c3, c4, c5 = st.columns(5)
     kpis = [
-        ('Total Revenue',   f"£{clean['Revenue'].sum():,.0f}"),
+        ('Total Revenue',   f"£{clean['Revenue'].sum()/1e6:.1f}M"),
         ('Transactions',    f"{clean['Invoice'].nunique():,}"),
         ('Customers',       f"{clean['Customer ID'].nunique():,}"),
         ('Products',        f"{clean['StockCode'].nunique():,}"),
@@ -212,7 +215,6 @@ if page == 'Overview':
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Top products and countries
     col_a, col_b = st.columns(2)
 
     with col_a:
@@ -223,16 +225,10 @@ if page == 'Overview':
         fig2 = go.Figure(go.Bar(
             x=top_p['Revenue'], y=top_p['Description'],
             orientation='h',
-            marker=dict(
-                color=top_p['Revenue'],
-                colorscale=[[0, '#1d4ed8'], [1, '#60a5fa']],
-                showscale=False
-            )
+            marker=dict(color=top_p['Revenue'], colorscale=[[0,'#1d4ed8'],[1,'#60a5fa']], showscale=False)
         ))
-        fig2.update_layout(
-            **PLOT_LAYOUT, title='Top 10 Products by Revenue',
-            xaxis_tickprefix='£', xaxis_tickformat=',.0f', height=380
-        )
+        fig2.update_layout(**PLOT_LAYOUT, title='Top 10 Products by Revenue',
+                           xaxis_tickprefix='£', xaxis_tickformat=',.0f', height=380)
         st.plotly_chart(fig2, use_container_width=True)
 
     with col_b:
@@ -243,16 +239,10 @@ if page == 'Overview':
         fig3 = go.Figure(go.Bar(
             x=top_c['Revenue'], y=top_c['Country'],
             orientation='h',
-            marker=dict(
-                color=top_c['Revenue'],
-                colorscale=[[0, '#5b21b6'], [1, '#a78bfa']],
-                showscale=False
-            )
+            marker=dict(color=top_c['Revenue'], colorscale=[[0,'#5b21b6'],[1,'#a78bfa']], showscale=False)
         ))
-        fig3.update_layout(
-            **PLOT_LAYOUT, title='Top 10 Countries by Revenue (excl. UK)',
-            xaxis_tickprefix='£', xaxis_tickformat=',.0f', height=380
-        )
+        fig3.update_layout(**PLOT_LAYOUT, title='Top 10 Countries by Revenue (excl. UK)',
+                           xaxis_tickprefix='£', xaxis_tickformat=',.0f', height=380)
         st.plotly_chart(fig3, use_container_width=True)
 
 # ═══════════════════════════════════════════════════════════════════
@@ -272,11 +262,7 @@ elif page == 'RFM Segmentation':
         fig1 = go.Figure(go.Bar(
             x=seg_counts['Customers'], y=seg_counts['Segment'],
             orientation='h',
-            marker=dict(
-                color=seg_counts['Customers'],
-                colorscale=[[0, '#1d4ed8'], [1, '#60a5fa']],
-                showscale=False
-            )
+            marker=dict(color=seg_counts['Customers'], colorscale=[[0,'#1d4ed8'],[1,'#60a5fa']], showscale=False)
         ))
         fig1.update_layout(**PLOT_LAYOUT, title='Customer Count by Segment', height=380)
         st.plotly_chart(fig1, use_container_width=True)
@@ -310,9 +296,7 @@ elif page == 'RFM Segmentation':
         .reset_index()
     )
     st.dataframe(
-        profile,
-        use_container_width=True,
-        hide_index=True,
+        profile, use_container_width=True, hide_index=True,
         column_config={
             'Avg_Monetary': st.column_config.NumberColumn('Avg Monetary (£)', format='£%.0f'),
             'Avg_Recency':  st.column_config.NumberColumn('Avg Recency (days)'),
@@ -344,7 +328,7 @@ elif page == 'Cohort Retention':
     fig = px.imshow(
         cohort_display,
         text_auto='.0%',
-        color_continuous_scale=[[0, '#0d1326'], [0.25, '#1d4ed8'], [1, '#60a5fa']],
+        color_continuous_scale=[[0,'#0d1326'],[0.25,'#1d4ed8'],[1,'#60a5fa']],
         zmin=0, zmax=0.5,
         title='Monthly Cohort Retention Rate',
         labels={'x': 'Months Since First Purchase', 'y': 'Cohort (Acquisition Month)'}
@@ -400,16 +384,13 @@ elif page == 'Forecasting':
     future  = forecast[forecast['Is_Future']].copy()
     future['Lower'] = future['Lower'].clip(lower=0)
 
-    # Closed polygon for the confidence band
     band_x = list(future['Date']) + list(future['Date'][::-1])
     band_y = list(future['Upper']) + list(future['Lower'][::-1])
 
     fig = go.Figure()
-
     fig.add_trace(go.Scatter(
         x=history['Date'], y=history['Forecast'],
-        name='Actual (fitted)',
-        mode='lines',
+        name='Actual (fitted)', mode='lines',
         line=dict(color='#475569', width=1.5, dash='dot')
     ))
     fig.add_trace(go.Scatter(
@@ -421,8 +402,7 @@ elif page == 'Forecasting':
     ))
     fig.add_trace(go.Scatter(
         x=future['Date'], y=future['Forecast'],
-        name='Forecast',
-        mode='lines+markers',
+        name='Forecast', mode='lines+markers',
         line=dict(color='#3b82f6', width=2.5),
         marker=dict(size=6, color='#3b82f6', line=dict(color='#0d1326', width=1.5))
     ))
@@ -435,8 +415,7 @@ elif page == 'Forecasting':
         title='12-Week Revenue Forecast',
         xaxis_title='Date',
         yaxis_title='Weekly Revenue (£)',
-        yaxis_tickprefix='£',
-        yaxis_tickformat=',.0f',
+        yaxis_tickprefix='£', yaxis_tickformat=',.0f',
         height=480
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -451,9 +430,7 @@ elif page == 'Forecasting':
         forecast_table[col] = forecast_table[col].round(0).astype(int)
 
     st.dataframe(
-        forecast_table,
-        use_container_width=True,
-        hide_index=True,
+        forecast_table, use_container_width=True, hide_index=True,
         column_config={
             'Forecast (£)':    st.column_config.NumberColumn(format='£%d'),
             'Lower Bound (£)': st.column_config.NumberColumn(format='£%d'),
@@ -500,33 +477,24 @@ elif page == 'Market Basket':
         )
         top_rules = top_rules.sort_values('lift')
         fig1 = go.Figure(go.Bar(
-            x=top_rules['lift'],
-            y=top_rules['label'],
+            x=top_rules['lift'], y=top_rules['label'],
             orientation='h',
-            marker=dict(
-                color=top_rules['lift'],
-                colorscale=[[0, '#1d4ed8'], [1, '#60a5fa']],
-                showscale=False
-            ),
+            marker=dict(color=top_rules['lift'], colorscale=[[0,'#1d4ed8'],[1,'#60a5fa']], showscale=False),
             text=top_rules['lift'].round(1).astype(str) + 'x',
             textposition='outside',
             textfont=dict(color='#94a3b8', size=10)
         ))
-        fig1.update_layout(
-            **PLOT_LAYOUT, title='Top 15 Rules by Lift',
-            xaxis_title='Lift', height=480
-        )
+        fig1.update_layout(**PLOT_LAYOUT, title='Top 15 Rules by Lift', xaxis_title='Lift', height=480)
         st.plotly_chart(fig1, use_container_width=True)
 
     with col_b:
         fig2 = go.Figure(go.Scatter(
-            x=rules['support'],
-            y=rules['confidence'],
+            x=rules['support'], y=rules['confidence'],
             mode='markers',
             marker=dict(
                 size=8,
                 color=rules['lift'],
-                colorscale=[[0, '#1d4ed8'], [0.5, '#8b5cf6'], [1, '#f59e0b']],
+                colorscale=[[0,'#1d4ed8'],[0.5,'#8b5cf6'],[1,'#f59e0b']],
                 showscale=True,
                 colorbar=dict(
                     title=dict(text='Lift', font=dict(color='#94a3b8')),
@@ -541,8 +509,7 @@ elif page == 'Market Basket':
         fig2.update_layout(
             **PLOT_LAYOUT,
             title='Support vs Confidence (coloured by Lift)',
-            xaxis_title='Support',
-            yaxis_title='Confidence',
+            xaxis_title='Support', yaxis_title='Confidence',
             height=480
         )
         st.plotly_chart(fig2, use_container_width=True)
@@ -562,9 +529,7 @@ elif page == 'Market Basket':
     )
     filtered.columns = ['Antecedent', 'Consequent', 'Support', 'Confidence', 'Lift']
     st.dataframe(
-        filtered,
-        use_container_width=True,
-        hide_index=True,
+        filtered, use_container_width=True, hide_index=True,
         column_config={
             'Support':    st.column_config.NumberColumn(format='%.4f'),
             'Confidence': st.column_config.NumberColumn(format='%.4f'),
@@ -596,7 +561,7 @@ elif page == 'Geography':
             'AOV':           ':,.0f',
             'Revenue_Share': ':.2f'
         },
-        color_continuous_scale=[[0, '#0d1326'], [0.15, '#1d4ed8'], [1, '#60a5fa']],
+        color_continuous_scale=[[0,'#0d1326'],[0.15,'#1d4ed8'],[1,'#60a5fa']],
         title='Global Revenue Distribution'
     )
     fig_map.update_layout(
@@ -633,17 +598,11 @@ elif page == 'Geography':
         fig2 = go.Figure(go.Bar(
             x=intl['Revenue'], y=intl['Country'],
             orientation='h',
-            marker=dict(
-                color=intl['Revenue'],
-                colorscale=[[0, '#1d4ed8'], [1, '#60a5fa']],
-                showscale=False
-            )
+            marker=dict(color=intl['Revenue'], colorscale=[[0,'#1d4ed8'],[1,'#60a5fa']], showscale=False)
         ))
         fig2.update_layout(
-            **PLOT_LAYOUT,
-            title='Top 15 International Markets by Revenue',
-            xaxis_tickprefix='£', xaxis_tickformat=',.0f',
-            height=440
+            **PLOT_LAYOUT, title='Top 15 International Markets by Revenue',
+            xaxis_tickprefix='£', xaxis_tickformat=',.0f', height=440
         )
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -652,17 +611,11 @@ elif page == 'Geography':
         fig3 = go.Figure(go.Bar(
             x=intl_aov['AOV'], y=intl_aov['Country'],
             orientation='h',
-            marker=dict(
-                color=intl_aov['AOV'],
-                colorscale=[[0, '#5b21b6'], [1, '#a78bfa']],
-                showscale=False
-            )
+            marker=dict(color=intl_aov['AOV'], colorscale=[[0,'#5b21b6'],[1,'#a78bfa']], showscale=False)
         ))
         fig3.update_layout(
-            **PLOT_LAYOUT,
-            title='Average Order Value by Country (excl. UK)',
-            xaxis_tickprefix='£', xaxis_tickformat=',.0f',
-            height=440
+            **PLOT_LAYOUT, title='Average Order Value by Country (excl. UK)',
+            xaxis_tickprefix='£', xaxis_tickformat=',.0f', height=440
         )
         st.plotly_chart(fig3, use_container_width=True)
 
@@ -673,9 +626,7 @@ elif page == 'Geography':
     display_geo['Revenue'] = display_geo['Revenue'].round(0).astype(int)
     display_geo['AOV']     = display_geo['AOV'].round(0).astype(int)
     st.dataframe(
-        display_geo,
-        use_container_width=True,
-        hide_index=True,
+        display_geo, use_container_width=True, hide_index=True,
         column_config={
             'Revenue':       st.column_config.NumberColumn('Revenue (£)',  format='£%d'),
             'AOV':           st.column_config.NumberColumn('AOV (£)',      format='£%d'),
